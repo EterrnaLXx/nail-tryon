@@ -1712,6 +1712,7 @@ function selectStyle(styleId) {
   const next = styles.find((style) => style.id === Number(styleId));
   if (!next) return;
   state.selectedStyle = next;
+  window.reportStyleSelected && window.reportStyleSelected({ id: next.id, name: next.name, tags: next.tags });
   preloadStyleTextures(next);
   renderSelectedStyle();
   renderStyles();
@@ -2110,7 +2111,19 @@ async function pollPhotoTryonJob(jobId, controller) {
       return;
     }
     if (job.state === "failed") {
-      setPhotoJobState("failed", "AI 生成失败", job.error || job.message || "请检查本机服务、ChatGPT 登录状态或输入图片。", progress);
+      // 若有 Canvas 快速预览，展示它而不是直接报错
+      if (job.previewUrl) {
+        showPhotoTryonResult({
+          ...job,
+          resultUrl: absoluteServiceUrl(job.previewUrl),
+          previewUrl: absoluteServiceUrl(job.previewUrl),
+          resultTier: "quick_preview",
+          message: "ChatGPT 生成超时，已显示 Canvas 快速预览",
+          fallbackReason: job.error || job.message,
+        });
+      } else {
+        setPhotoJobState("failed", "AI 生成失败", job.error || job.message || "请检查本机服务、ChatGPT 登录状态或输入图片。", progress);
+      }
       return;
     }
     setPhotoJobState(job.state || "generating", job.message || "AI 生成中", "请保持页面打开；首次使用可能需要完成一次 ChatGPT 登录。", progress || 0.28);
@@ -2135,6 +2148,13 @@ function showPhotoTryonResult(job) {
     provider: job.provider || "deterministic_preview",
     resultTier: job.resultTier || "quick_preview",
   };
+  window.reportGenerationCompleted && window.reportGenerationCompleted({
+    styleId: state.selectedStyle.id,
+    styleName: state.selectedStyle.name,
+    durationMs: job.elapsedMs || 0,
+    provider: job.provider || "unknown",
+    resultTier: job.resultTier || "quick_preview",
+  });
   els.photoDownload.href = resultUrl;
   els.photoResultCaption.textContent = isChatGptResult ? "ChatGPT 生成结果" : isLocalAi ? "本地 AI 结果" : "快速预览";
   showGeneratedComparison(resultUrl);

@@ -14,6 +14,7 @@
           <a href="#tryon">上传试戴</a>
           <a href="#styles">款式</a>
         </div>
+        <button class="merchant-btn" id="merchantBtn" onclick="window.open('/merchant/','_blank')">商家端</button>
       </nav>
 
       <section class="hero" id="top">
@@ -133,7 +134,11 @@
       </section>
     </main>
 
+    <!-- 用户侧脚本 -->
     <script src="./vendor/onnxruntime-web/ort.min.js"></script>
+    <script src="./shared/interface.js"></script>
     <script src="./app.js?v=20260603-playwright-probe"></script>
+    <!-- trending-styles 在 app.js 之后加载，依赖 app.js 的 styles 数组 -->
+    <script src="./merchant/trending-styles.js"></script>
   </body>
 </html>
